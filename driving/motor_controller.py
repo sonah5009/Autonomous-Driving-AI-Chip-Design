@@ -180,28 +180,15 @@ class MotorController:
         """값 매핑 함수"""
         return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
-    # def map_angle_to_range(self, angle):
-    #     """각도를 모터 제어 범위로 매핑"""
-    #     abs_angle = angle
-    #     if abs_angle > 0:
-    #         return 7
-    #     elif abs_angle < 0:
-    #         return -7
-    #     else:
-    #         return 0
     def map_angle_to_range(self, angle):
-        abs_angle = abs(angle)
-
-        if abs_angle <= 60:
-            mapped_value = 20
-        elif abs_angle > 90:
-            mapped_value = 0
+        """각도를 모터 제어 범위로 매핑"""
+        abs_angle = angle
+        if abs_angle > 0:
+            return 7
+        elif abs_angle < 0:
+            return -7
         else:
-            step = (abs_angle - 60) / 1.5
-            mapped_value = 20 - int(step)
-            mapped_value = max(0, mapped_value)
-
-        return -mapped_value if angle > 0 else mapped_value
+            return 0
 
     def control_motors(self, angle=None, control_mode=1):
         """모터 전체 제어"""
@@ -209,7 +196,7 @@ class MotorController:
             self.read_adc(),
             self.resistance_most_right,
             self.resistance_most_left,
-            -20, 20
+            -7, 7
         )
         
         if angle is not None:
