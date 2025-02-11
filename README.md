@@ -127,7 +127,6 @@ Update the following variables in the file:
 self.reference_point_x = 190
 self.reference_point_y = 150
 self.point_detection_height = 20
-right_lane_angle = 90
 ```
 
 ---
