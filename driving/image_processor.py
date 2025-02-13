@@ -27,10 +27,6 @@ class ImageProcessor:
         self.reference_point_y = 240
         self.point_detection_height = 20
         
-        self.previous_gradient = 0
-        self.previous_result_idx = np.array([])
-        self.previous_center_val = None
-        
         # DPU 초기화 상태 추적 플래그
         self.initialized = False
         self.init_dpu()

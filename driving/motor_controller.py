@@ -106,9 +106,9 @@ class MotorController:
                 self.last_steering_time = current_time
             duty = self.current_duty
             
-        self.motors['motor_5'].write(0x08, 0)  # valid  steering_left
-        self.motors['motor_1'].write(0x08, 1)  # valid  steering_right
-        self.motors['motor_1'].write(0x04, duty)
+        self.motors['motor_1'].write(0x08, 0)  # valid  steering_left
+        self.motors['motor_5'].write(0x08, 1)  # valid  steering_right
+        self.motors['motor_5'].write(0x04, duty)
 
     def left(self, steering_speed, control_mode=1):
         """좌회전 제어"""
@@ -122,9 +122,9 @@ class MotorController:
                 self.last_steering_time = current_time
             duty = self.current_duty
             
-        self.motors['motor_5'].write(0x08, 1)  # valid  steering_left
-        self.motors['motor_1'].write(0x08, 0)  # valid  steering_right
-        self.motors['motor_5'].write(0x04, duty)
+        self.motors['motor_5'].write(0x08, 0)  # valid  steering_right
+        self.motors['motor_1'].write(0x08, 1)  # valid  steering_left
+        self.motors['motor_1'].write(0x04, duty)
 
     def stay(self, steering_speed, control_mode=1):
         """중립 상태 유지"""
@@ -135,8 +135,8 @@ class MotorController:
             self.current_duty = self.min_duty
             duty = self.current_duty
             
-        self.motors['motor_5'].write(0x08, 0)  # valid  steering_left
-        self.motors['motor_1'].write(0x08, 0)  # valid  steering_right
+        self.motors['motor_5'].write(0x08, 0)  # valid  steering_right
+        self.motors['motor_1'].write(0x08, 0)  # valid  steering_left
         self.motors['motor_5'].write(0x04, duty)
         self.motors['motor_1'].write(0x04, duty)
 
@@ -177,8 +177,16 @@ class MotorController:
         return adc_value 
 
     def map_value(self, x, in_min, in_max, out_min, out_max):
-        """값 매핑 함수"""
-        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+        """
+        x를 in_min~in_max 범위에서 out_min~out_max 범위로 매핑
+        """
+        if x <= in_min:
+            return out_max
+        elif x >= in_max:
+            return out_min
+        else:
+            # in_min과 in_max 사이일 경우, x가 커질수록 결과가 선형적으로 감소하도록 계산
+            return (in_max - x) * (out_max - out_min) / (in_max - in_min) + out_min
 
     def map_angle_to_range(self, angle):
         """각도를 모터 제어 범위로 매핑"""
@@ -223,10 +231,10 @@ class MotorController:
             self.right_speed = max(self.right_speed - 1, -100)
             
         if keyboard.is_pressed('a'):
-            self.steering_angle = min(self.steering_angle + 1, 20)
+            self.steering_angle = min(self.steering_angle - 1, 20)
             
         if keyboard.is_pressed('d'):
-            self.steering_angle = max(self.steering_angle - 1, -20)
+            self.steering_angle = max(self.steering_angle + 1, -20)
             
         if keyboard.is_pressed('r'):
             self.left_speed = 0
