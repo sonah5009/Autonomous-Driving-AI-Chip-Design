@@ -6,7 +6,7 @@
 
 ## Folder Structure
 
-### (NEW) Segmentation
+### $\textcolor{red}{(NEW)}$ Segmentation
 - **test_data**  
   *Inference test img*
 - **dpu_yolact.ipynb**  
