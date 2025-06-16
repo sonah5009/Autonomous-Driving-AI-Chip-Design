@@ -18,6 +18,8 @@
   *Jupyter Notebook for driving code*
 - **data_collection.ipynb**  
   *Jupyter Notebook for data collection*
+- **test_sonic.ipynb**  
+  *Jupyter Notebook for Ultrasonic sensor test (for reference only as it's a simple example)*
 
 ### dpu
 - **dpu.bit**  
