@@ -11,7 +11,7 @@
 - **test_data**  
   *Inference test img*
 - **dpu_yolact.ipynb**  
-  *Jupyter Notebook for real-time segmentation Inference (~14FPS)*
+  *Jupyter Notebook for real-time segmentation Inference (~20FPS)*
 
 ### debugging
 - **SoC_Driving.ipynb**  
