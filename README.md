@@ -1,6 +1,6 @@
 # AutoLab_SoC Driving Project File Structure
 
-2025 Winter Extracurricular Program: Autonomous Driving SoC Design for Students
+2025 Autonomous Driving AI Chip design contest for Sungkyunkwan University Students
 
 ---
 
