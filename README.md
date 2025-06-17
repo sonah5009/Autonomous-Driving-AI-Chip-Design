@@ -1,4 +1,4 @@
-# AutoLab_SoC Driving Project File Structure
+# Autonomous Driving AI Chip Design Baseline File Structure
 
 2025 Autonomous Driving AI Chip design contest for Sungkyunkwan University Students
 
