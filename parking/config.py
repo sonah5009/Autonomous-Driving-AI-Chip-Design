@@ -16,12 +16,11 @@ MOTOR_ADDRESSES = {
 }
 
 ULTRASONIC_ADDRESSES = {
-    'ultrasonic_0': 0x00A0000000,
-    'ultrasonic_1': 0x00A0010000,
-    'ultrasonic_2': 0x00A0020000,
-    'ultrasonic_3': 0x00A0030000,
-    'ultrasonic_4': 0x00A0040000,
-    'ultrasonic_5': 0x00A0050000
+    'ultrasonic_0': 0x00B0000000,
+    'ultrasonic_1': 0x00B0010000,
+    'ultrasonic_2': 0x00B0020000,
+    'ultrasonic_3': 0x00B0030000,
+    'ultrasonic_4': 0x00B0040000
 }
 
 ADDRESS_RANGE = 0x10000
