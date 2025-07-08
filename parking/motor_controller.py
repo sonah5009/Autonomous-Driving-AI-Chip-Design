@@ -39,8 +39,8 @@ class MotorController:
         self.spi.mode = 0b00
         
         # 저항 값 범위 설정
-        self.resistance_most_left = 1045 
-        self.resistance_most_right = 220 
+        self.resistance_most_left = 2800 
+        self.resistance_most_right = 2200 
     @property
     def steering_speed(self):
         return self._steering_speed
