@@ -106,6 +106,7 @@ class ParkingSystemController:
         self.post_correction_backward_start_time = None
         self.parking_completion_stop_start_time = None
         self.right_turn_after_increase_start_time = None
+        self.additional_backward_start_time = None  # 추가 후진 시작 시간
         
         # 주차 설정
         self.parking_config = {
@@ -121,7 +122,9 @@ class ParkingSystemController:
             'straight_backward_duration': 0.3, # 정방향 후진 시간 (초)
             'correction_duration': 2.0, # 수정 시간 (초)
             'parking_stop_duration': 2.0, # 주차 완료 정지 시간 (초)
-            'right_turn_duration': 1.5  # 우회전 시간 (초)
+            'right_turn_duration': 1.5,  # 우회전 시간 (초)
+            'additional_backward_duration': 0.5,  # 추가 후진 시간 (초)
+            'final_right_turn_angle': 20  # 최종 우회전 각도
         }
         
         # 스레드 안전을 위한 락
@@ -150,6 +153,7 @@ class ParkingSystemController:
         for key in self.phase_states:
             self.phase_states[key] = False
         self.phase_start_time = None
+        self.additional_backward_start_time = None
     
     def update_sensor_data(self, sensor_data):
         """
@@ -364,6 +368,18 @@ class ParkingSystemController:
         """직진 조향"""
         self.motor_controller.stay(self.parking_config['steering_speed'])
     
+    def _set_steering_angle(self, angle):
+        """특정 각도로 조향 설정"""
+        if angle > 0:
+            # 우회전
+            self.motor_controller.right(self.parking_config['steering_speed'])
+        elif angle < 0:
+            # 좌회전
+            self.motor_controller.left(self.parking_config['steering_speed'])
+        else:
+            # 직진
+            self.motor_controller.stay(self.parking_config['steering_speed'])
+    
     def execute_parking_cycle(self):
         """주차 사이클 실행"""
         if not self.is_parking_active:
@@ -445,7 +461,7 @@ class ParkingSystemController:
         self._set_phase(ParkingPhase.RIGHT_TURN_BACKWARD)
     
     def _execute_right_turn_backward_phase(self):
-        """우회전 후진 단계 실행"""
+        """우회전 후진 단계 실행 - 조향각 점진적 조정 추가"""
         if not self.phase_states['right_turn_started']:
             self._turn_right()
             self._move_backward()
@@ -453,12 +469,23 @@ class ParkingSystemController:
             self.backward_start_time = time.time()
             self.status_message = "오른쪽 조향 후진 중..."
         
-        # 조향각 점진적 조정
+        # 조향각 점진적 조정 (시뮬레이션과 동일)
         if self.backward_start_time is not None:
             elapsed_time = time.time() - self.backward_start_time
             if elapsed_time < 2.0:
-                # 2초에 걸쳐 조향각을 줄임
-                pass  # 실제 구현에서는 조향각 조정 로직 추가
+                # 2초에 걸쳐 조향각을 13도에서 0도로 줄임
+                steering_reduction = (elapsed_time / 2.0) * self.parking_config['right_turn_angle']
+                current_steering = max(0, self.parking_config['right_turn_angle'] - steering_reduction)
+                
+                # 조향각에 따른 조향 설정
+                if current_steering > 0:
+                    self._turn_right()  # 우회전 유지
+                else:
+                    self._straight_steering()  # 직진으로 전환
+                
+                self.status_message = f"조향각 점진적 조정 중... ({current_steering:.1f}도)"
+            else:
+                self._straight_steering()  # 2초 후 직진으로 전환
         
         if self._check_backward_completion():
             self._set_phase(ParkingPhase.STRAIGHT_BACKWARD)
@@ -513,7 +540,7 @@ class ParkingSystemController:
             self._set_phase(ParkingPhase.POST_CORRECTION_BACKWARD)
     
     def _execute_post_correction_backward_phase(self):
-        """수정 후 후진 단계 실행"""
+        """수정 후 후진 단계 실행 - 추가 후진 시간 로직 추가"""
         if not self.phase_states['post_correction_backward_started']:
             self._straight_steering()
             self._move_backward()
@@ -524,9 +551,16 @@ class ParkingSystemController:
         # front_right 센서 거리 확인
         front_right_distance = self._get_sensor_distance("front_right")
         
+        # front_right가 40cm 이하가 되면 추가 후진 시작 시간 기록
         if front_right_distance <= self.parking_config['stop_distance']:
-            self._stop_vehicle()
-            self._set_phase(ParkingPhase.PARKING_COMPLETE_STOP)
+            if self.additional_backward_start_time is None:
+                self.additional_backward_start_time = time.time()
+                self.status_message = "front_right 40cm 이하! 추가 정방향 후진 시작..."
+            elif self._check_time_elapsed(self.additional_backward_start_time, 
+                                        self.parking_config['additional_backward_duration']):
+                self._stop_vehicle()
+                self.status_message = "수정 후 정방향 후진 완료!"
+                self._set_phase(ParkingPhase.PARKING_COMPLETE_STOP)
     
     def _execute_parking_complete_stop_phase(self):
         """주차 완료 정지 단계 실행"""
@@ -541,7 +575,7 @@ class ParkingSystemController:
             self._set_phase(ParkingPhase.FINAL_FORWARD)
     
     def _execute_final_forward_phase(self):
-        """최종 전진 단계 실행"""
+        """최종 전진 단계 실행 - 우회전 로직 완전 구현"""
         if not self.phase_states['parking_completion_forward_started']:
             self._straight_steering()
             self._move_forward()
@@ -552,7 +586,20 @@ class ParkingSystemController:
         rear_right_current = self._get_sensor_distance("rear_right")
         if (self.previous_distances["rear_right"] > 0 and 
             rear_right_current > self.previous_distances["rear_right"] + 15):
-            self._set_phase(ParkingPhase.COMPLETED)
+            
+            # 우회전 시작
+            if not self.phase_states['right_turn_after_increase_started']:
+                self.right_turn_after_increase_start_time = time.time()
+                self.phase_states['right_turn_after_increase_started'] = True
+                self._turn_right()  # 우회전 시작
+                self.status_message = "오른쪽 조향 중..."
+            
+            # 우회전 완료 확인
+            elif self._check_time_elapsed(self.right_turn_after_increase_start_time, 
+                                        self.parking_config['right_turn_duration']):
+                self._straight_steering()  # 직진으로 복귀
+                self.status_message = "오른쪽 조향 완료! 정방향 주행 시작..."
+                self._set_phase(ParkingPhase.COMPLETED)
     
     def _execute_completed_phase(self):
         """완료 단계 실행"""
